@@ -1,5 +1,7 @@
 import asyncio, sys, json, subprocess, os
 from playwright.async_api import async_playwright
+os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)),'out'), exist_ok=True)
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 ROUTES=['/','/program','/progress','/library','/exercise/back_squat','/skills','/body','/profile','/places','/workout']
 AXE=open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'node_modules')+'/axe-core/axe.min.js').read()
 LAYOUT=r"""() => {
