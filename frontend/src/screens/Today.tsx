@@ -86,9 +86,9 @@ export default function Today() {
   // «Нужно тебе»: короткие дела, каждое ведёт туда, где его сделать
   const lastMeas = Math.max(0, ...s.measurements.filter((m) => !m.deleted).map((m) => m.date))
   const needs: { key: string; icon: string; color: string; go: () => void }[] = []
-  if (!s.profile.name) needs.push({ key: 'name', icon: 'edit', color: 'var(--accent)', go: () => navigate('/profile') })
+  if (!s.profile.name) needs.push({ key: 'name', icon: 'edit', color: 'var(--accent-text)', go: () => navigate('/profile') })
   if (isIOS() && !isStandalone()) needs.push({ key: 'install', icon: 'download', color: 'var(--blue)', go: () => navigate('/profile') })
-  if (push === 'off') needs.push({ key: 'push', icon: 'bell', color: 'var(--accent)', go: () => navigate('/profile') })
+  if (push === 'off') needs.push({ key: 'push', icon: 'bell', color: 'var(--accent-text)', go: () => navigate('/profile') })
   if (now - lastMeas > 14 * 86400000) needs.push({ key: 'measure', icon: 'ruler', color: 'var(--green)', go: () => navigate('/body') })
   const nextTs = nextDay === undefined ? null : wk + (nextDay >= wd ? nextDay : nextDay + 7) * 86400000
   const nextLong = nextTs === null ? t('week_none') : nextDay === wd ? t('week_today') : new Date(nextTs).toLocaleDateString(lang === 'sr' ? 'sr-Latn' : lang, { weekday: 'short', day: 'numeric', month: 'short' })
@@ -170,7 +170,7 @@ export default function Today() {
 
           <div className="kpis section">
             <div className="kpi card">
-              <span className="ki" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}><Icon name="flame" size={18} /></span>
+              <span className="ki" style={{ background: 'var(--accent-soft)', color: 'var(--accent-text)' }}><Icon name="flame" size={18} /></span>
               <b className="num">{st.count}</b><span>{p(st.count, 'today_streak')}</span>
               {st.frozen && <span className="faint">{t('today_streak_freeze')}</span>}
             </div>

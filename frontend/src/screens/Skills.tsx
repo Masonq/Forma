@@ -47,7 +47,7 @@ export default function Skills() {
                   {state === 'passed' ? t('sk_done') : (ex.mode === 't' ? t('sk_goal_t', { n: st.goal }) : t('sk_goal', { n: st.goal }))}
                   {state === 'locked' && `, ${t('sk_locked').toLowerCase()}`}
                 </div>
-                {missing.length > 0 && !doable(st.ex) && <div className="small" style={{ color: 'var(--accent)', marginTop: 2 }}>{t('sk_needs', { equip: missing.join(', ') })}</div>}
+                {missing.length > 0 && !doable(st.ex) && <div className="small" style={{ color: 'var(--accent-text)', marginTop: 2 }}>{t('sk_needs', { equip: missing.join(', ') })}</div>}
                 {state === 'current' && (
                   <>
                     <div className="pbar" style={{ width: 160 }}><i style={{ width: `${(passes / PASSES_TO_UNLOCK) * 100}%` }} /></div>

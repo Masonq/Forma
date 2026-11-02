@@ -1,0 +1,5 @@
+{
+  "name": "forma-audit",
+  "private": true,
+  "dependencies": { "axe-core": "^4.10.0", "impeccable": "^2.0.6" }
+}

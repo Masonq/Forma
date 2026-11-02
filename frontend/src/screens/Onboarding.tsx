@@ -12,7 +12,7 @@ import type { Goal, Level, Place } from '../lib/types'
 
 const KINDS: PlaceKind[] = ['gym', 'home', 'street', 'travel', 'custom']
 const GOALS: { v: Goal; icon: string; color: string }[] = [
-  { v: 'mass', icon: 'muscle', color: 'var(--red)' }, { v: 'cut', icon: 'flame', color: 'var(--accent)' },
+  { v: 'mass', icon: 'muscle', color: 'var(--red)' }, { v: 'cut', icon: 'flame', color: 'var(--accent-text)' },
   { v: 'strength', icon: 'barbell', color: 'var(--blue)' }, { v: 'shape', icon: 'bolt', color: 'var(--green)' },
   { v: 'health', icon: 'heart', color: 'var(--red)' },
 ]

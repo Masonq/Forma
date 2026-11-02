@@ -93,7 +93,7 @@ export default function Summary({ id }: { id: string }) {
           <div className="section-head"><div className="h3">{t('pf_skills')}</div><button className="link" onClick={() => navigate('/skills')}>{t('prog_open')}<Icon name="chevR" size={16} /></button></div>
           <div className="list">
             {sm.stepUps.map((u, i) => (
-              <div className="li" key={'u' + i}><div className="li-ic" style={{ color: 'var(--accent)' }}><Icon name="layers" size={20} /></div><div className="li-main"><div className="li-title">{l(exById(u.to)!.name)}</div><div className="li-sub">{t('sum_step_up')}</div></div></div>
+              <div className="li" key={'u' + i}><div className="li-ic" style={{ color: 'var(--accent-text)' }}><Icon name="layers" size={20} /></div><div className="li-main"><div className="li-title">{l(exById(u.to)!.name)}</div><div className="li-sub">{t('sum_step_up')}</div></div></div>
             ))}
             {sm.stepProgress.map((u, i) => (
               <div className="li" key={'p' + i}><div className="li-ic"><Icon name="layers" size={20} /></div><div className="li-main"><div className="li-sub" style={{ marginTop: 0, color: 'var(--text)', fontSize: 15 }}>{t('sum_step_progress', { ex: l(exById(u.ex)!.name), a: u.passes, b: PASSES_TO_UNLOCK })}</div></div></div>

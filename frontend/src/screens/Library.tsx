@@ -108,7 +108,7 @@ export function ExerciseDetail({ id }: { id: string }) {
         {ex.primary.map((m) => <span key={m}><i />{t('m_' + m)}</span>)}
         {ex.secondary.map((m) => <span key={m} className="sec"><i />{t('m_' + m)}</span>)}
       </div>
-      {ex.caution && <div className="banner" style={{ marginTop: 12, color: 'var(--accent)', background: 'var(--accent-soft)' }}><Icon name="info" size={18} />{l(ex.caution)}</div>}
+      {ex.caution && <div className="banner" style={{ marginTop: 12, color: 'var(--accent-text)', background: 'var(--accent-soft)' }}><Icon name="info" size={18} />{l(ex.caution)}</div>}
       {ex.steps.length > 0 && (
         <div className="section">
           <div className="section-head"><div className="h3">{t('lib_technique')}</div></div>

@@ -90,7 +90,7 @@ export default function Profile() {
           {pr.name ? pr.name.trim().slice(0, 1).toUpperCase() : <Icon name="profile" size={28} />}
         </div>
         <button className="grow" style={{ textAlign: 'left', minWidth: 0 }} onClick={() => { setName(pr.name); setSheet('name') }}>
-          {pr.name ? <div className="h2 ellipsis">{pr.name}</div> : <div className="h2 ellipsis" style={{ color: 'var(--accent)' }}>{t('pf_add_name')}</div>}
+          {pr.name ? <div className="h2 ellipsis">{pr.name}</div> : <div className="h2 ellipsis" style={{ color: 'var(--accent-text)' }}>{t('pf_add_name')}</div>}
           <div className="small muted inline-meta"><span>{t('goal_' + pr.goal)}</span><span>{t('level_' + pr.level)}</span><span><span className="num">{done}</span> {p(done, 'workouts_n')}</span></div>
         </button>
       </div>

@@ -86,7 +86,7 @@ function Strength() {
               const val = e.mode === 'wr' ? fmtW(b.weight, units, lang) : e.mode === 't' ? `${b.time} ${t('sec')}` : `${b.reps} ${t('reps')}`
               return (
                 <button key={id} className="li" onClick={() => navigate(`/exercise/${id}`)}>
-                  <div className="li-ic" style={{ color: 'var(--accent)' }}><Icon name="trophy" size={20} /></div>
+                  <div className="li-ic" style={{ color: 'var(--accent-text)' }}><Icon name="trophy" size={20} /></div>
                   <div className="li-main"><div className="li-title ellipsis">{l(e.name)}</div></div>
                   <div className="li-val num" style={{ color: 'var(--text)', fontWeight: 600 }}>{val}</div>
                 </button>

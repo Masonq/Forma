@@ -75,7 +75,7 @@ export default function Program() {
             const ts = days[i]
             const label = `${wdayShort(lang, weekday(ts))}, ${fmtDate(ts, lang)}`
             if (!pl) return (
-              <div key={i} className="card tight row" style={{ opacity: 0.7 }}>
+              <div key={i} className="card tight row rest-row">
                 <div className="li-ic" style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--surface-2)', display: 'grid', placeItems: 'center' }}><Icon name="moon" size={20} /></div>
                 <div className="grow"><div style={{ fontWeight: 600 }}>{label}</div><div className="small muted">{t('prog_rest')}</div></div>
               </div>
