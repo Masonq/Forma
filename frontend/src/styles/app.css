@@ -476,3 +476,10 @@ img, svg { display: block; }
 .hero.has-photo .label-row, .hero.has-photo .meta { color: rgba(243,241,236,0.72); }
 .ex-banner { margin: -16px -16px 14px; aspect-ratio: 21 / 9; overflow: hidden; position: relative; background: #000; }
 .ex-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.barbell { position: relative; display: flex; align-items: center; padding: 8px 0; overflow: hidden; border-radius: var(--r-in); background: #0a0a0b; }
+.barbell .bb-shaft { position: absolute; left: 0; right: 0; top: 50%; height: 12px; transform: translateY(-50%); background: linear-gradient(180deg, #8e939a, #d9dde2 45%, #6d7279); }
+.barbell .bb-collar { position: relative; z-index: 1; flex: none; width: 14px; height: 34px; margin-left: 22%; border-radius: 3px; background: linear-gradient(180deg, #7a7f86, #e1e4e8 45%, #5d6269); }
+.barbell .bb-plates { position: relative; z-index: 1; display: flex; align-items: center; gap: 1px; }
+.barbell .bb-plates img { display: block; }
+.barbell .bb-sleeve { flex: 1; }

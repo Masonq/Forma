@@ -3,7 +3,7 @@ import { ExThumb } from '../components/Thumb'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { EXERCISES } from '../data/exercises'
 import { Icon, PLACE_ICON } from '../components/Icon'
-import { BarbellSvg, Clock, Sheet, navigate, platesFor } from '../components/ui'
+import { Barbell, Clock, Sheet, navigate, platesFor } from '../components/ui'
 import { fmtClock, fmtDate, fmtNum, fromUnit, toUnit, weightStep } from '../lib/format'
 import { useT } from '../lib/i18n'
 import { activeWorkout, useStore } from '../lib/store'
@@ -442,7 +442,7 @@ export function PlateSheet({ initial, onClose }: { initial: number; onClose: () 
         <div className="v"><div className="disp num" style={{ fontSize: 40, fontWeight: 600 }}>{fmtNum(toUnit(kg, units), lang, 2)}</div><small>{t(units)}</small></div>
         <button onClick={() => setKg(kg + 2.5)} aria-label="+"><Icon name="plus" /></button>
       </div>
-      <div style={{ margin: '14px 0 6px' }}><BarbellSvg plates={r.plates} /></div>
+      <div style={{ margin: '14px 0 6px' }}><Barbell plates={r.plates} /></div>
       {Math.abs(r.achieved - kg) > 0.01 && <div className="small" style={{ color: 'var(--accent)', textAlign: 'center' }}>{t('wo_plates_cant', { w: `${fmtNum(r.achieved, lang)} ${t('kg')}` })}</div>}
       <div className="label" style={{ marginTop: 12 }}>{t('wo_plates_side')}</div>
       <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>

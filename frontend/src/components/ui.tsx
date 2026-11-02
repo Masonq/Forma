@@ -154,9 +154,12 @@ export function Ring({ value, size = 56, stroke = 6, color = 'var(--accent)', ch
 }
 
 // ——— Блины на грифе ———
+// h — высота блина относительно большого (бамперные 25–5 кг одного диаметра), ar — ширина/высота фото
 export const PLATES = [
-  { kg: 25, color: '#d7263d', h: 1 }, { kg: 20, color: '#2b59c3', h: 1 }, { kg: 15, color: '#f2c14e', h: 0.92 },
-  { kg: 10, color: '#2e9e5b', h: 0.84 }, { kg: 5, color: '#e9e7e2', h: 0.62 }, { kg: 2.5, color: '#c8343f', h: 0.5 }, { kg: 1.25, color: '#9aa0a8', h: 0.42 },
+  { kg: 25, color: '#d7263d', h: 1, ar: 62 / 320 }, { kg: 20, color: '#2b59c3', h: 1, ar: 58 / 320 },
+  { kg: 15, color: '#f2c14e', h: 1, ar: 54 / 320 }, { kg: 10, color: '#2e9e5b', h: 1, ar: 48 / 320 },
+  { kg: 5, color: '#e9e7e2', h: 1, ar: 55 / 320 }, { kg: 2.5, color: '#3a3c42', h: 0.44, ar: 31 / 141 },
+  { kg: 1.25, color: '#b8bcc3', h: 0.4, ar: 40 / 182 },
 ]
 export function platesFor(total: number, bar: number) {
   let side = Math.max(0, (total - bar) / 2)
@@ -165,22 +168,22 @@ export function platesFor(total: number, bar: number) {
   const achieved = bar + out.reduce((a, p) => a + p.kg * 2, 0)
   return { plates: out, achieved }
 }
-export function BarbellSvg({ plates }: { plates: typeof PLATES }) {
-  const W = 320, H = 120, cy = 60
-  let x = 150
+// Один конец грифа: втулка, замок и блины в порядке от тяжёлых к лёгким
+export function Barbell({ plates }: { plates: typeof PLATES }) {
+  const AVAIL = 250 // px под блины на узком экране
+  const sum = plates.reduce((a, p) => a + p.ar * p.h, 0) || 1
+  const H = Math.min(150, Math.max(80, AVAIL / sum))
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img">
-      <rect x={10} y={cy - 3} width={300} height={6} rx={3} fill="var(--surface-3)" />
-      <rect x={138} y={cy - 9} width={10} height={18} rx={2} fill="var(--faint)" />
-      {plates.map((p, i) => {
-        const w = p.kg >= 10 ? 14 : 10
-        const h = 96 * p.h
-        const el = <rect key={i} x={x} y={cy - h / 2} width={w} height={h} rx={3} fill={p.color} stroke="rgba(0,0,0,.25)" />
-        x += w + 2
-        return el
-      })}
-      <rect x={x + 1} y={cy - 7} width={6} height={14} rx={2} fill="var(--faint)" />
-    </svg>
+    <div className="barbell" style={{ height: H + 16 }} role="img" aria-label={plates.map((p) => p.kg).join(' + ')}>
+      <div className="bb-shaft" />
+      <div className="bb-collar" />
+      <div className="bb-plates">
+        {plates.map((p, i) => (
+          <img key={i} src={`/media/plate-${p.kg}.webp`} alt="" style={{ height: H * p.h, width: H * p.h * p.ar }} />
+        ))}
+      </div>
+      <div className="bb-sleeve" />
+    </div>
   )
 }
 
