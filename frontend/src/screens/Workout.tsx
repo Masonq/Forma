@@ -1,3 +1,4 @@
+import { exPhoto } from '../lib/media'
 import { ExThumb } from '../components/Thumb'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { EXERCISES } from '../data/exercises'
@@ -89,6 +90,7 @@ export default function WorkoutScreen() {
           let workN = 0
           return (
             <div key={it.id} className={`card ex-card ${cur?.item.id === it.id ? 'active' : ''} ${it.superset ? 'ss' : ''}`}>
+              {cur?.item.id === it.id && exPhoto(it.exerciseId) && <div className="ex-banner"><img src={exPhoto(it.exerciseId)!} alt="" /></div>}
               <div className="ex-top">
                 <button className="grow" style={{ textAlign: 'left' }} onClick={() => navigate(`/exercise/${ex.id}`)}>
                   {it.superset && <div className="ss-label"><Icon name="link" size={14} />{t('wo_superset')} {ssIdx}/{ssN}</div>}

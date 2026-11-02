@@ -109,7 +109,8 @@ export default function Onboarding() {
 
   if (step === 0) {
     return (
-      <div className="ob">
+      <div className="ob ob-welcome">
+        <div className="ob-bg" aria-hidden="true"><img src="/media/welcome.webp" alt="" /></div>
         <div className="ob-top"><Logo /></div>
         <div className="ob-hero">
           <h1>{t('ob_hero')}</h1>

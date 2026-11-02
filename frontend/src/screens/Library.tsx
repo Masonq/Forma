@@ -1,3 +1,4 @@
+import { Anatomy } from '../components/Anatomy'
 import { ExThumb } from '../components/Thumb'
 import { exPhoto } from '../lib/media'
 import { useMemo, useState } from 'react'
@@ -102,7 +103,8 @@ export function ExerciseDetail({ id }: { id: string }) {
         </button>
       )}
       {exPhoto(ex.id) && <div className="ex-photo"><img src={exPhoto(ex.id)!} alt="" /></div>}
-      <div className="muscle-chips" style={{ marginTop: 16 }}>
+      <div style={{ marginTop: 16 }}><Anatomy levels={levels} /></div>
+      <div className="muscle-chips" style={{ marginTop: 12 }}>
         {ex.primary.map((m) => <span key={m}><i />{t('m_' + m)}</span>)}
         {ex.secondary.map((m) => <span key={m} className="sec"><i />{t('m_' + m)}</span>)}
       </div>

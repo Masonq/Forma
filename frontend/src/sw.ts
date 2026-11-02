@@ -9,6 +9,13 @@ self.skipWaiting()
 clientsClaim()
 cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
+// Фото из /media: сначала из кэша, в фоне обновляем — работают и офлайн
+registerRoute(({ url }) => url.pathname.startsWith('/media/'), async ({ request }) => {
+  const cache = await caches.open('forma-media-v1')
+  const hit = await cache.match(request)
+  const net = fetch(request).then((r) => { if (r.ok) cache.put(request, r.clone()); return r }).catch(() => hit as Response)
+  return hit ?? net
+})
 registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), { denylist: [/^\/api\//] }))
 
 self.addEventListener('push', (e) => {

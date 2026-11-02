@@ -458,3 +458,21 @@ img, svg { display: block; }
 .ex-photo { margin-top: 16px; border-radius: var(--r-card); overflow: hidden; aspect-ratio: 16 / 9; background: var(--surface); }
 .ex-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .hero .hero-muscles { margin-top: 10px; font-size: 14px; color: var(--text); opacity: 0.85; }
+.anatomy { display: grid; gap: 4px; background: #000; border-radius: var(--r-card); overflow: hidden; padding: 8px 4px; isolation: isolate; }
+.anatomy svg { display: block; width: 100%; height: auto; }
+
+.ob-welcome { position: relative; }
+.ob-bg { position: fixed; inset: 0; z-index: 0; background: #000; }
+.ob-bg img { width: 100%; height: 100%; object-fit: cover; object-position: 60% 20%; display: block; opacity: 0.9; }
+.ob-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 22%, rgba(0,0,0,0) 40%, rgba(13,14,16,0.92) 72%, #0d0e10 100%); }
+.ob-welcome > :not(.ob-bg) { position: relative; z-index: 1; }
+.ob-welcome .ob-hero h1, .ob-welcome .ob-hero .sub, .ob-welcome .logo { color: #f3f1ec; }
+.ob-welcome .btn.line { border-color: rgba(255,255,255,0.28); color: #f3f1ec; background: rgba(0,0,0,0.25); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.hero.has-photo { background: #000; border-color: transparent; min-height: 248px; display: flex; flex-direction: column; justify-content: flex-end; }
+.hero .hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 70% 50%; }
+.hero.has-photo::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.1) 100%), linear-gradient(0deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 55%); }
+.hero.has-photo > :not(.hero-bg) { position: relative; z-index: 1; }
+.hero.has-photo .hero-title, .hero.has-photo .hero-muscles { color: #f3f1ec; }
+.hero.has-photo .label-row, .hero.has-photo .meta { color: rgba(243,241,236,0.72); }
+.ex-banner { margin: -16px -16px 14px; aspect-ratio: 21 / 9; overflow: hidden; position: relative; background: #000; }
+.ex-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }

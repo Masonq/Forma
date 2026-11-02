@@ -1,3 +1,4 @@
+import { placePhoto } from '../lib/media'
 import { ExThumb } from '../components/Thumb'
 import { useMemo, useState } from 'react'
 import { Icon, Logo, PLACE_ICON } from '../components/Icon'
@@ -69,7 +70,8 @@ export default function Today() {
 
       <div className="desk-2" style={{ marginTop: 18 }}>
         <div>
-          <div className="hero">
+          <div className={`hero ${placePhoto(place.kind) ? 'has-photo' : ''}`}>
+            {placePhoto(place.kind) && <img className="hero-bg" src={placePhoto(place.kind)!} alt="" aria-hidden="true" />}
             <div className="hero-top">
             <div className="hero-body">
               <div className="label-row"><Icon name={active ? 'timer' : planned ? 'bolt' : 'moon'} size={16} />{active ? t('today_continue') : planned ? t('today_workout') : t('today_rest_day')}</div>
