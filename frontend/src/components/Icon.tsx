@@ -59,12 +59,12 @@ const P: Record<string, string> = {
 
 export type IconName = keyof typeof P
 
-export function Icon({ name, size = 22, stroke = 1.8, fill = false, className }: { name: string; size?: number; stroke?: number; fill?: boolean; className?: string }) {
+export function Icon({ name, size = 22, stroke = 1.8, fill = false, className, style }: { name: string; size?: number; stroke?: number; fill?: boolean; className?: string; style?: React.CSSProperties }) {
   const d = P[name] ?? P.info
   const dotted = name === 'more'
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? 'currentColor' : 'none'} stroke="currentColor"
-      strokeWidth={dotted ? 3 : stroke} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      strokeWidth={dotted ? 3 : stroke} strokeLinecap="round" strokeLinejoin="round" className={className} style={style} aria-hidden="true">
       <path d={d} />
     </svg>
   )

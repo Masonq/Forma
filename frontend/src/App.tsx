@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Icon, Logo } from './components/Icon'
+import { Icon } from './components/Icon'
+import { Sidebar } from './components/Sidebar'
+import { WorkoutIsland } from './components/Island'
 import { navigate, usePath } from './components/ui'
 import { useT } from './lib/i18n'
 import { activeWorkout, useStore } from './lib/store'
@@ -20,15 +22,6 @@ const TABS = [
   { path: '/program', key: 'tab_program', icon: 'program' },
   { path: '/start', key: 'tab_start', icon: 'play' },
   { path: '/progress', key: 'tab_progress', icon: 'progress' },
-  { path: '/profile', key: 'tab_profile', icon: 'profile' },
-]
-const SIDE = [
-  { path: '/', key: 'tab_today', icon: 'today' },
-  { path: '/program', key: 'tab_program', icon: 'program' },
-  { path: '/progress', key: 'tab_progress', icon: 'progress' },
-  { path: '/library', key: 'nav_library', icon: 'book' },
-  { path: '/body', key: 'nav_body', icon: 'body' },
-  { path: '/skills', key: 'pf_skills', icon: 'layers' },
   { path: '/profile', key: 'tab_profile', icon: 'profile' },
 ]
 
@@ -95,19 +88,9 @@ export default function App() {
   else screen = <Today />
 
   return (
-    <div className={`app ${showNav ? 'with-nav' : ''}`}>
+    <div className={`app ${showNav ? "with-nav" : ""} ${showNav && live ? "has-island" : ""}`}>
       {showNav && (
-        <aside className="sidebar">
-          <div className="logo"><Logo /></div>
-          {SIDE.map((s) => (
-            <button key={s.path} className={`side-item ${(s.path === '/' ? path === '/' : path.startsWith(s.path)) ? 'on' : ''}`} onClick={() => navigate(s.path)}>
-              <Icon name={s.icon} size={20} />{t(s.key)}
-            </button>
-          ))}
-          <button className="btn primary" onClick={() => navigate(live ? '/workout' : '/?start=1')}>
-            <Icon name="play" size={18} fill stroke={0} />{t(live ? 'today_continue' : 'today_start')}
-          </button>
-        </aside>
+        <Sidebar path={path} />
       )}
       <main>
         {!online && showNav && <div className="page" style={{ paddingBottom: 0, paddingTop: 'calc(var(--sat) + 10px)' }}><div className="banner"><Icon name="wifiOff" size={18} />{t('offline')}</div></div>}
@@ -128,6 +111,7 @@ export default function App() {
           ))}
         </nav>
       )}
+      {showNav && live && <WorkoutIsland />}
       {toast && <div className={`toast ${toast.tone ?? ''}`} style={isWorkout ? { bottom: 'calc(var(--sab) + 200px)' } : undefined}>{toast.text}</div>}
     </div>
   )

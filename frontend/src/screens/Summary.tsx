@@ -1,4 +1,5 @@
 import { Icon } from '../components/Icon'
+import { ParticleText } from '../components/Particles'
 import { navigate } from '../components/ui'
 import { PASSES_TO_UNLOCK } from '../data/skills'
 import { fmtDuration, fmtNum, fmtW, toUnit } from '../lib/format'
@@ -27,6 +28,9 @@ export default function Summary({ id }: { id: string }) {
   const units = s.profile.units
   const top = sm.records[0]
   const topEx = top ? exById(top.exerciseId, s.custom) : undefined
+  const burstText = top
+    ? (top.kind === 'weight' && top.prev ? `+${fmtNum(toUnit(top.value - top.prev, units), lang, 2)} ${t(units)}` : top.kind === 'reps' && top.prev ? `+${top.value - top.prev}` : t('sum_record_short'))
+    : t('sum_step_short')
   const recVal = (kind: string, v: number) =>
     kind === 'weight' || kind === 'e1rm' || kind === 'volume' ? fmtW(v, units, lang) : kind === 'time' ? `${v} ${t('sec')}` : `${v} ${t('reps')}`
 
@@ -40,9 +44,9 @@ export default function Summary({ id }: { id: string }) {
 
       {top || sm.stepUps.length ? (
         <div style={{ textAlign: 'center' }}>
-          <div className="record-burst">
-            {Array.from({ length: 10 }).map((_, i) => <span key={i} className="ray" style={{ ['--a' as any]: `${i * 36}deg`, animationDelay: `${0.15 + i * 0.02}s`, background: i % 2 ? 'var(--accent)' : 'var(--green)' }} />)}
-            <Hex color="var(--green)" />
+          <div className="record-fx">
+            <ParticleText text={burstText} height={140} />
+            <div className="record-fx-hex"><Hex color="var(--green)" /></div>
           </div>
           <h1 className="h1" style={{ fontSize: 30 }}>{top ? t('sum_record') : t('sum_step_up')}</h1>
           {top && topEx && (

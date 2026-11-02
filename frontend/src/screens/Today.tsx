@@ -1,6 +1,6 @@
 import { placePhoto } from '../lib/media'
 import { ExThumb } from '../components/Thumb'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Icon, Logo, PLACE_ICON } from '../components/Icon'
 import { EQUIPMENT } from '../data/skills'
 import { Sheet, navigate } from '../components/ui'
@@ -10,6 +10,7 @@ import { activeWorkout, useStore } from '../lib/store'
 import { estimateMinutes, exById, generate, musclesOf, placeFor, streak } from '../lib/training'
 import { ctx, startEmpty, startWorkout } from '../lib/workout'
 import type { Place } from '../lib/types'
+import { isIOS, isStandalone, pushState } from '../lib/sync'
 
 export default function Today() {
   const { t, p, l, lang } = useT()
@@ -17,6 +18,8 @@ export default function Today() {
   const active = activeWorkout(s)
   const [placeOverride, setPlaceOverride] = useState<string | null>(null)
   const [placeSheet, setPlaceSheet] = useState(false)
+  const [push, setPush] = useState<string>('')
+  useEffect(() => { pushState().then(setPush).catch(() => {}) }, [])
   const startOpen = location.search.includes('start=1')
   const now = Date.now()
   const wd = weekday(now)
@@ -71,6 +74,22 @@ export default function Today() {
   const records30 = done.filter((w) => w.startedAt >= now - 30 * 86400000).reduce((a, w) => a + (w.summary?.records.length ?? 0), 0)
   const nextDay = planned && !doneDays.has(dayKey(now)) ? wd : (planDays.find((d) => d > wd) ?? planDays[0])
   const nextLabel = nextDay === undefined ? t('week_none') : nextDay === wd ? t('week_today') : wdayShort(lang, nextDay)
+  const prevRecords = done.filter((w) => w.startedAt >= now - 60 * 86400000 && w.startedAt < now - 30 * 86400000).reduce((a, w) => a + (w.summary?.records.length ?? 0), 0)
+  const recDelta = records30 - prevRecords
+  const last30 = done.filter((w) => w.startedAt >= now - 30 * 86400000).length
+  const hour = new Date(now).getHours()
+  const part = hour < 5 ? 'night' : hour < 12 ? 'morning' : hour < 18 ? 'day' : 'evening'
+  const greeting = s.profile.name ? t('greet_' + part + '_n', { name: s.profile.name.trim().split(' ')[0] }) : t('greet_' + part)
+  const dateLine = new Date(now).toLocaleDateString(lang === 'sr' ? 'sr-Latn' : lang, { weekday: 'long', day: 'numeric', month: 'long' })
+  const daysTo = nextDay === undefined ? null : (nextDay >= wd ? nextDay - wd : nextDay + 7 - wd)
+  const untilNext = daysTo === null || daysTo === 0 ? '' : daysTo === 1 ? t('until_tomorrow') : t('until_days', { n: daysTo }) + ' ' + p(daysTo, 'days_n')
+  // «Нужно тебе»: короткие дела, каждое ведёт туда, где его сделать
+  const lastMeas = Math.max(0, ...s.measurements.filter((m) => !m.deleted).map((m) => m.date))
+  const needs: { key: string; icon: string; color: string; go: () => void }[] = []
+  if (!s.profile.name) needs.push({ key: 'name', icon: 'edit', color: 'var(--accent)', go: () => navigate('/profile') })
+  if (isIOS() && !isStandalone()) needs.push({ key: 'install', icon: 'download', color: 'var(--blue)', go: () => navigate('/profile') })
+  if (push === 'off') needs.push({ key: 'push', icon: 'bell', color: 'var(--accent)', go: () => navigate('/profile') })
+  if (now - lastMeas > 14 * 86400000) needs.push({ key: 'measure', icon: 'ruler', color: 'var(--green)', go: () => navigate('/body') })
   const nextTs = nextDay === undefined ? null : wk + (nextDay >= wd ? nextDay : nextDay + 7) * 86400000
   const nextLong = nextTs === null ? t('week_none') : nextDay === wd ? t('week_today') : new Date(nextTs).toLocaleDateString(lang === 'sr' ? 'sr-Latn' : lang, { weekday: 'short', day: 'numeric', month: 'short' })
 
@@ -100,12 +119,16 @@ export default function Today() {
         </div>
       </header>
 
-      <h1 className="h1 today-h1">{t('today_title')}</h1>
+      <div className="greet">
+        <div className="greet-date">{dateLine}</div>
+        <h1 className="h1 today-h1">{greeting}</h1>
+      </div>
 
       <div className="desk-2" style={{ marginTop: 14 }}>
         <div>
           <div className={`hero ${placePhoto(place.kind) ? 'has-photo' : ''}`}>
             {placePhoto(place.kind) && <img className="hero-bg" src={placePhoto(place.kind)!} alt="" aria-hidden="true" />}
+            {!active && !planned && untilNext && <span className="hero-chip num"><Icon name="timer" size={14} />{untilNext}</span>}
             <div className="hero-top">
             <div className="hero-body">
               <div className="label-row"><Icon name={active ? 'timer' : planned ? 'bolt' : 'moon'} size={16} />{active ? t('today_continue') : planned ? t('today_workout') : t('today_rest_day')}</div>
@@ -153,17 +176,32 @@ export default function Today() {
             </div>
             <div className="kpi card">
               <span className="ki" style={{ background: 'var(--green-soft)', color: 'var(--green)' }}><Icon name="trophy" size={18} /></span>
-              <b className="num">{records30}</b><span>{p(records30, 'kpi_records')}</span>
+              <div className="kpi-v"><b className="num">{records30}</b>{recDelta !== 0 && <Delta v={recDelta} />}</div><span>{p(records30, 'kpi_records')}</span>
             </div>
             <div className="kpi card">
               <span className="ki" style={{ background: 'var(--blue-soft)', color: 'var(--blue)' }}><Icon name="grid" size={18} /></span>
-              <b className="num">{done.length}</b><span>{p(done.length, 'kpi_total')}</span>
+              <div className="kpi-v"><b className="num">{done.length}</b>{last30 > 0 && <Delta v={last30} label={t('kpi_30d')} />}</div><span>{p(done.length, 'kpi_total')}</span>
             </div>
             <button className="kpi card press" onClick={() => navigate('/progress')}>
               <span className="ki" style={{ background: 'var(--red-soft)', color: 'var(--red)' }}><Icon name={highlight?.icon ?? 'arrowUp'} size={18} stroke={2.2} /></span>
               {highlight ? <><b className="num ellipsis">{highlight.big}</b><span className="ellipsis">{highlight.caption}</span></> : <span>{t('today_highlight_none')}</span>}
             </button>
           </div>
+
+          {needs.length > 0 && (
+            <div className="section">
+              <div className="section-head"><div className="h3">{t('needs_title')}</div><span className="count-pill num">{needs.length}</span></div>
+              <div className="list">
+                {needs.slice(0, 4).map((n) => (
+                  <div className="li need" key={n.key}>
+                    <div className="li-ic" style={{ color: n.color }}><Icon name={n.icon} size={20} /></div>
+                    <div className="li-main"><div className="li-title">{t('need_' + n.key)}</div><div className="li-sub">{t('need_' + n.key + '_d')}</div></div>
+                    <button className="btn sm" onClick={n.go}>{t('need_do')}</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="section">
@@ -230,4 +268,8 @@ function StartSheet({ open, onClose, place }: { open: boolean; onClose: () => vo
       </div>
     </Sheet>
   )
+}
+
+function Delta({ v, label }: { v: number; label?: string }) {
+  return <span className={`delta num ${v > 0 ? 'up' : 'down'}`}><Icon name="arrowUp" size={11} stroke={2.6} style={v < 0 ? { transform: 'rotate(180deg)' } : undefined} />{v > 0 ? '+' : '−'}{Math.abs(v)}{label ? ` ${label}` : ''}</span>
 }

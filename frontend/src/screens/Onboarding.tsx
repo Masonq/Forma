@@ -1,3 +1,4 @@
+import { ParticleText } from '../components/Particles'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Equip, Lang } from '../data/exercises'
 import { EQUIPMENT, PLACE_DEFAULTS, levelsFromTest, type PlaceKind } from '../data/skills'
@@ -113,6 +114,7 @@ export default function Onboarding() {
         <div className="ob-bg" aria-hidden="true"><img src="/media/welcome.webp" alt="" /></div>
         <div className="ob-top"><Logo /></div>
         <div className="ob-hero">
+          <div className="ob-particles"><ParticleText text="FORMA" height={96} hold colors={['#f5c02e', '#f5c02e', '#f3f1ec']} /></div>
           <h1>{t('ob_hero')}</h1>
           <p className="sub" style={{ maxWidth: '30ch' }}>{t('ob_hero_sub')}</p>
         </div>
