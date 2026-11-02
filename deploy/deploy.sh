@@ -113,4 +113,6 @@ cd "$APP"
 git config user.name "forma-server"; git config user.email "server@forma.local"
 git add deploy/reports/deploy.txt
 git commit -qm "deploy report $(date -u +%F_%H%M)" >/dev/null 2>&1
-git push -q origin HEAD:main >/dev/null 2>&1 || { git pull -q --rebase origin main && git push -q origin HEAD:main; }
+# никогда не спрашивать логин/пароль: без доступа просто пропускаем отправку отчёта
+export GIT_TERMINAL_PROMPT=0
+timeout 60 git push -q origin HEAD:main >/dev/null 2>&1 || { timeout 60 git pull -q --rebase origin main >/dev/null 2>&1 && timeout 60 git push -q origin HEAD:main >/dev/null 2>&1; } || echo "report: push skipped (no git access)"
