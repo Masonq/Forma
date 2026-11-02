@@ -55,20 +55,54 @@ export default function Today() {
 
   const title = active ? t(active.title) : t(plan.title)
 
-  return (
-    <div className="page">
-      <div className="topbar mobile-only">
-        <Logo />
-        <button className="iconbtn" onClick={() => navigate('/library')} aria-label={t('lib_search')}><Icon name="search" size={20} /></button>
-      </div>
-      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
-        <h1 className="h1">{t('today_title')}</h1>
-        <button className="place-chip" onClick={() => setPlaceSheet(true)} aria-haspopup="dialog">
-          <Icon name={PLACE_ICON[place.kind]} size={18} />{place.name}<Icon name="chevD" size={16} />
-        </button>
-      </div>
+  // Неделя: состояние каждого дня из плана
+  const planDays = [...s.profile.days].sort((a, b) => a - b)
+  const dayState = (d: number) => {
+    const isDone = doneDays.has(dayKey(wk + d * 86400000))
+    if (isDone) return 'done'
+    if (d === wd) return 'today'
+    return d < wd ? 'missed' : 'plan'
+  }
+  const weekWs = done.filter((w) => w.startedAt >= wk)
+  const weekDone = planDays.filter((d) => dayState(d) === 'done').length
+  const weekMin = Math.round(weekWs.reduce((a, w) => a + ((w.endedAt ?? w.startedAt) - w.startedAt), 0) / 60000)
+  const weekVol = weekWs.reduce((a, w) => a + (w.summary?.volume ?? 0), 0)
+  const weekSets = weekWs.reduce((a, w) => a + (w.summary?.sets ?? 0), 0)
+  const records30 = done.filter((w) => w.startedAt >= now - 30 * 86400000).reduce((a, w) => a + (w.summary?.records.length ?? 0), 0)
+  const nextDay = planned && !doneDays.has(dayKey(now)) ? wd : (planDays.find((d) => d > wd) ?? planDays[0])
+  const nextLabel = nextDay === undefined ? t('week_none') : nextDay === wd ? t('week_today') : wdayShort(lang, nextDay)
+  const nextTs = nextDay === undefined ? null : wk + (nextDay >= wd ? nextDay : nextDay + 7) * 86400000
+  const nextLong = nextTs === null ? t('week_none') : nextDay === wd ? t('week_today') : new Date(nextTs).toLocaleDateString(lang === 'sr' ? 'sr-Latn' : lang, { weekday: 'short', day: 'numeric', month: 'short' })
 
-      <div className="desk-2" style={{ marginTop: 18 }}>
+  return (
+    <div className="page today-page">
+      <header className="top glass">
+        <div className="top-row">
+          <span className="mobile-only"><Logo /></span>
+          <div className="top-actions">
+            <button className="place-switch" onClick={() => setPlaceSheet(true)} aria-haspopup="dialog">
+              <Icon name={PLACE_ICON[place.kind]} size={18} />
+              <span className="ellipsis">{place.name}</span>
+              <Icon name="chevD" size={16} className="chev" />
+            </button>
+            <button className="iconbtn glass-btn mobile-only" onClick={() => navigate('/library')} aria-label={t('lib_search')}><Icon name="search" size={20} /></button>
+          </div>
+        </div>
+        <div className="pipe" aria-label={t('today_week')}>
+          {planDays.map((d, i) => (
+            <span key={d} className="pst">
+              {i > 0 && <span className="arr" aria-hidden="true">›</span>}
+              <span className={`pdot ${dayState(d)}`}>{dayState(d) === 'done' ? <Icon name="check" size={11} stroke={3.4} /> : null}</span>
+              {wdayShort(lang, d)}
+            </span>
+          ))}
+          <span className="nx num"><Icon name="timer" size={14} />{nextLabel}</span>
+        </div>
+      </header>
+
+      <h1 className="h1 today-h1">{t('today_title')}</h1>
+
+      <div className="desk-2" style={{ marginTop: 14 }}>
         <div>
           <div className={`hero ${placePhoto(place.kind) ? 'has-photo' : ''}`}>
             {placePhoto(place.kind) && <img className="hero-bg" src={placePhoto(place.kind)!} alt="" aria-hidden="true" />}
@@ -89,48 +123,45 @@ export default function Today() {
             </button>
           </div>
 
-          <div className="section">
-            <div className="section-head"><div className="h3">{t('today_week')}</div></div>
-            <div className="week">
-              {[0, 1, 2, 3, 4, 5, 6].map((d) => {
-                const ts = wk + d * 86400000
-                const isDone = doneDays.has(dayKey(ts))
-                const isPlan = s.profile.days.includes(d)
-                const isToday = d === wd
-                const missed = isPlan && !isDone && d < wd
-                return (
-                  <div key={d} className={`wd ${isToday ? 'cur' : ''}`}>
-                    <span>{wdayShort(lang, d)}</span>
-                    <span className={`dot ${isDone ? 'done' : ''} ${isPlan ? 'plan' : ''} ${isToday ? 'today' : ''} ${missed ? 'missed' : ''}`}>
-                      {isDone ? <Icon name="check" size={16} stroke={2.6} /> : new Date(ts).getDate()}
-                    </span>
-                  </div>
-                )
-              })}
+          <div className="air card section">
+            <div className="air-top">
+              <div>
+                <div className="air-label">{t('today_week')}</div>
+                <div className="air-big num">{weekDone}<span> / {planDays.length}</span></div>
+                <div className="small muted">{p(planDays.length, 'week_plan_n')}</div>
+              </div>
+              <div className="air-next">
+                <div className="air-label">{t('week_next')}</div>
+                <div className="air-next-v">{nextLong}</div>
+              </div>
+            </div>
+            <div className="air-bar" role="img" aria-label={`${weekDone} / ${planDays.length}`}>
+              {planDays.map((d) => <i key={d} className={dayState(d)} />)}
+            </div>
+            <div className="air-stats">
+              <div><b className="num">{weekMin}</b><span>{t('min')}</span></div>
+              <div><b className="num">{fmtNum(toUnit(weekVol, s.profile.units), lang, 0)}</b><span>{t('week_volume', { u: t(s.profile.units) })}</span></div>
+              <div><b className="num">{weekSets}</b><span>{p(weekSets, 'week_sets')}</span></div>
             </div>
           </div>
 
-          <div className="grid2 section">
-            <div className="card tight">
-              <div className="row" style={{ gap: 10 }}>
-                <span style={{ color: st.count ? 'var(--accent)' : 'var(--faint)' }}><Icon name="flame" size={24} /></span>
-                <div className="stat-big num">{st.count}</div>
-              </div>
-              <div className="small muted" style={{ marginTop: 8 }}>{p(st.count, 'today_streak')}</div>
-              {st.frozen && <div className="small faint" style={{ marginTop: 4 }}>{t('today_streak_freeze')}</div>}
+          <div className="kpis section">
+            <div className="kpi card">
+              <span className="ki" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}><Icon name="flame" size={18} /></span>
+              <b className="num">{st.count}</b><span>{p(st.count, 'today_streak')}</span>
+              {st.frozen && <span className="faint">{t('today_streak_freeze')}</span>}
             </div>
-            <button className="card tight press" style={{ textAlign: 'left' }} onClick={() => navigate('/progress')}>
-              {highlight ? (
-                <>
-                  <div className="row" style={{ gap: 8 }}><span className="up"><Icon name={highlight.icon} size={22} stroke={2.2} /></span><div className="stat-big num" style={{ fontSize: 24 }}>{highlight.big}</div></div>
-                  <div className="small muted ellipsis" style={{ marginTop: 8 }}>{highlight.caption}</div>
-                </>
-              ) : (
-                <>
-                  <span className="faint"><Icon name="trophy" size={24} /></span>
-                  <div className="small muted" style={{ marginTop: 8 }}>{t('today_highlight_none')}</div>
-                </>
-              )}
+            <div className="kpi card">
+              <span className="ki" style={{ background: 'var(--green-soft)', color: 'var(--green)' }}><Icon name="trophy" size={18} /></span>
+              <b className="num">{records30}</b><span>{p(records30, 'kpi_records')}</span>
+            </div>
+            <div className="kpi card">
+              <span className="ki" style={{ background: 'var(--blue-soft)', color: 'var(--blue)' }}><Icon name="grid" size={18} /></span>
+              <b className="num">{done.length}</b><span>{p(done.length, 'kpi_total')}</span>
+            </div>
+            <button className="kpi card press" onClick={() => navigate('/progress')}>
+              <span className="ki" style={{ background: 'var(--red-soft)', color: 'var(--red)' }}><Icon name={highlight?.icon ?? 'arrowUp'} size={18} stroke={2.2} /></span>
+              {highlight ? <><b className="num ellipsis">{highlight.big}</b><span className="ellipsis">{highlight.caption}</span></> : <span>{t('today_highlight_none')}</span>}
             </button>
           </div>
         </div>

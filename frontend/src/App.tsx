@@ -115,6 +115,7 @@ export default function App() {
       </main>
       {showNav && (
         <nav className="tabbar" aria-label="main">
+          {TABS.findIndex((x) => x.path === cur) >= 0 && cur !== '/start' && <span className="tab-ind" style={{ transform: `translateX(${TABS.findIndex((x) => x.path === cur) * 100}%)` }} />}
           {TABS.map((tb) => tb.path === '/start' ? (
             <button key={tb.path} className="tab-start" aria-label={t(tb.key)} onClick={() => navigate(live ? '/workout' : '/?start=1')}>
               <span className={live ? 'live' : ''}><Icon name="play" size={22} fill stroke={0} /></span>
