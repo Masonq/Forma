@@ -1,0 +1,13 @@
+Forma deploy 2026-11-02 21:22 UTC, commit d8fc1b6
+OK   packages present
+OK   db role created
+OK   database
+OK   python deps
+OK   api service
+OK   nginx
+OK   certificate issued
+OK   https api: {"ok":true,"users":0,"time":"2026-11-02T21:22:52.389983+00:00"}
+OK   index cache-control: no-cache, must-revalidate
+OK   service worker 200
+build index-D-Yq9lR8.js
+RESULT: OK https://forma.89-208-113-147.sslip.io
