@@ -66,7 +66,10 @@ const ZONES: Partial<Record<Muscle, string[]>> = {
 // Два кадра из одной картинки: спереди и сзади
 const VIEWS = { front: '170 40 650 1220', back: '1090 40 650 1220' } as const
 
-export function Anatomy({ levels, color = 'var(--red)', views = ['front', 'back'] }: {
+// Перекраска текстуры мышцы в насыщенный красный по яркости
+const TINT = '0.463 0.910 0.177 0 0.10  0.066 0.129 0.025 0 0  0.078 0.153 0.030 0 0  0 0 0 1 0'
+
+export function Anatomy({ levels, views = ['front', 'back'] }: {
   levels: Partial<Record<Muscle, number>>; color?: string; views?: ('front' | 'back')[]
 }) {
   const active = (Object.keys(levels) as Muscle[])
@@ -77,31 +80,24 @@ export function Anatomy({ levels, color = 'var(--red)', views = ['front', 'back'
       {views.map((vw) => (
         <svg key={vw} viewBox={VIEWS[vw]} role="img" aria-hidden="true">
           <defs>
-            <filter id={`soft-${vw}`} x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" /></filter>
-            <filter id={`glow-${vw}`} x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="10" /></filter>
+            <filter id={`tint-${vw}`}><feColorMatrix type="matrix" values={TINT} /></filter>
+            <filter id={`glow-${vw}`} x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9" /></filter>
+            {active.map(({ k, d }) => (
+              <clipPath key={k} id={`clip-${vw}-${k}`}><path d={d} /></clipPath>
+            ))}
           </defs>
           <image href="/media/anatomy.webp" x="0" y="0" width="1920" height="1280" />
-          {/* мягкое свечение вокруг мышцы */}
+          {/* мягкое красное свечение позади контура */}
           <g filter={`url(#glow-${vw})`}>
             {active.map(({ k, d, v }) => (
-              <path key={k} d={d} fill={color} style={{ mixBlendMode: 'screen', opacity: 0.18 * v }} />
+              <path key={k} d={d} fill="#ff2d3c" opacity={0.22 * v} />
             ))}
           </g>
-          {/* перекраска мышцы в красный с сохранением рельефа */}
-          <g filter={`url(#soft-${vw})`}>
-            {active.map(({ k, d, v }) => (
-              <path key={k} d={d} fill={color} style={{ mixBlendMode: 'color', opacity: 0.45 + 0.55 * v }} />
-            ))}
-            {active.map(({ k, d, v }) => (
-              <path key={k} d={d} fill={color} style={{ mixBlendMode: 'soft-light', opacity: 0.35 + 0.45 * v }} />
-            ))}
-            {active.map(({ k, d, v }) => (
-              <path key={k} d={d} fill={color} style={{ mixBlendMode: 'screen', opacity: 0.1 + 0.14 * v }} />
-            ))}
-          </g>
-          {/* тонкий контур по форме мышцы */}
-          {active.map(({ k, d, v }) => (
-            <path key={k} d={d} fill="none" stroke={color} strokeWidth="2.5" style={{ opacity: 0.25 + 0.4 * v }} filter={`url(#soft-${vw})`} />
+          {/* сама мышца, перекрашенная в красный: текстура и рельеф сохраняются */}
+          {active.map(({ k, v }) => (
+            <g key={k} clipPath={`url(#clip-${vw}-${k})`} opacity={0.62 + 0.38 * v}>
+              <image href="/media/anatomy.webp" x="0" y="0" width="1920" height="1280" filter={`url(#tint-${vw})`} />
+            </g>
           ))}
         </svg>
       ))}
