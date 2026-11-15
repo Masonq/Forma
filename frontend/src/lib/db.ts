@@ -1,17 +1,17 @@
 import { openDB, type IDBPDatabase } from 'idb'
 import type { PhotoEntry, SyncKind } from './types'
 
-const KINDS: SyncKind[] = ['profile', 'place', 'workout', 'measurement', 'exercise']
+const KINDS: SyncKind[] = ['profile', 'place', 'workout', 'measurement', 'exercise', 'meal']
 let dbp: Promise<IDBPDatabase> | null = null
 
 export function db() {
   if (!dbp) {
-    dbp = openDB('forma', 1, {
+    dbp = openDB('forma', 2, {
       upgrade(d) {
-        for (const k of KINDS) d.createObjectStore(k, { keyPath: 'id' })
-        d.createObjectStore('outbox')
-        d.createObjectStore('meta')
-        d.createObjectStore('photos', { keyPath: 'id' })
+        for (const k of KINDS) if (!d.objectStoreNames.contains(k)) d.createObjectStore(k, { keyPath: 'id' })
+        if (!d.objectStoreNames.contains('outbox')) d.createObjectStore('outbox')
+        if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta')
+        if (!d.objectStoreNames.contains('photos')) d.createObjectStore('photos', { keyPath: 'id' })
       },
     })
   }

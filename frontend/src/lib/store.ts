@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { Lang } from '../data/exercises'
 import * as db from './db'
 import { uid } from './format'
-import type { CustomExercise, Measurement, Place, Profile, SyncKind, Workout } from './types'
+import type { CustomExercise, Meal, Measurement, Place, Profile, SyncKind, Workout } from './types'
 
 function detectLang(): Lang {
   const l = (navigator.language || 'ru').toLowerCase()
@@ -29,6 +29,7 @@ interface S {
   places: Place[]
   workouts: Workout[]
   measurements: Measurement[]
+  meals: Meal[]
   custom: CustomExercise[]
   rest: RestState | null
   toast: Toast | null
@@ -40,6 +41,8 @@ interface S {
   saveWorkout(w: Workout): void
   deleteWorkout(id: string): void
   saveMeasurement(m: Measurement): void
+  saveMeal(m: Meal): void
+  deleteMeal(id: string): void
   deleteMeasurement(id: string): void
   saveCustom(c: CustomExercise): void
   setRest(r: RestState | null): void
@@ -68,14 +71,15 @@ export const useStore = create<S>((set, get) => ({
   places: [],
   workouts: [],
   measurements: [],
+  meals: [],
   custom: [],
   rest: null,
   toast: null,
   synced: true,
 
   async init() {
-    const [profiles, places, workouts, measurements, custom, rest] = await Promise.all([
-      db.loadAll('profile'), db.loadAll('place'), db.loadAll('workout'), db.loadAll('measurement'), db.loadAll('exercise'),
+    const [profiles, places, workouts, measurements, custom, meals, rest] = await Promise.all([
+      db.loadAll('profile'), db.loadAll('place'), db.loadAll('workout'), db.loadAll('measurement'), db.loadAll('exercise'), db.loadAll('meal'),
       db.meta<RestState>('rest'),
     ])
     const profile = { ...defaultProfile(), ...(profiles[0] ?? {}) }
@@ -84,6 +88,7 @@ export const useStore = create<S>((set, get) => ({
       places: places.filter((p) => !p.deleted).sort((a, b) => a.order - b.order),
       workouts: workouts.filter((w) => !w.deleted),
       measurements: measurements.filter((m) => !m.deleted),
+      meals: meals.filter((m: Meal) => !m.deleted),
       custom: custom.filter((c) => !c.deleted),
       rest: rest && rest.endsAt > Date.now() - 60000 ? rest : null,
     })
@@ -123,6 +128,17 @@ export const useStore = create<S>((set, get) => ({
     persist('workout', x)
   },
 
+  saveMeal(m) {
+    const x = { ...m, updatedAt: Date.now() }
+    db.put('meal', x)
+    set({ meals: upsert(get().meals, x) })
+  },
+  deleteMeal(id) {
+    const m = get().meals.find((x) => x.id === id)
+    if (!m) return
+    db.put('meal', { ...m, deleted: true, updatedAt: Date.now() } as any)
+    set({ meals: get().meals.filter((a) => a.id !== id) })
+  },
   saveMeasurement(m) {
     const x = touch(m)
     set({ measurements: upsert(get().measurements, x) })
@@ -164,7 +180,7 @@ export const useStore = create<S>((set, get) => ({
       if (r.updatedAt > st.profile.updatedAt) set({ profile: { ...defaultProfile(), ...r } })
       return
     }
-    const key = ({ place: 'places', workout: 'workouts', measurement: 'measurements', exercise: 'custom' } as const)[kind]
+    const key = ({ place: 'places', workout: 'workouts', measurement: 'measurements', exercise: 'custom', meal: 'meals' } as const)[kind]
     let arr: any[] = (st as any)[key]
     for (const r of recs) {
       const cur = arr.find((a) => a.id === r.id)

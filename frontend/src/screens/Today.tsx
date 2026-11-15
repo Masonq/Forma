@@ -4,13 +4,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { Icon, Logo, PLACE_ICON } from '../components/Icon'
 import { EQUIPMENT } from '../data/skills'
 import { Sheet, navigate } from '../components/ui'
-import { dayKey, fmtNum, startOfWeek, toUnit, wdayShort, weekday } from '../lib/format'
+import { dayKey, fmtNum, startOfDay, startOfWeek, toUnit, wdayShort, weekday } from '../lib/format'
 import { useT } from '../lib/i18n'
 import { activeWorkout, useStore } from '../lib/store'
 import { estimateMinutes, exById, generate, musclesOf, placeFor, streak } from '../lib/training'
 import { ctx, startEmpty, startWorkout } from '../lib/workout'
 import type { Place } from '../lib/types'
 import { isIOS, isStandalone, pushState } from '../lib/sync'
+import { dayTotals, targets } from '../lib/nutrition'
 
 export default function Today() {
   const { t, p, l, lang } = useT()
@@ -188,6 +189,8 @@ export default function Today() {
             </button>
           </div>
 
+          <NutritionCard />
+
           {needs.length > 0 && (
             <div className="section">
               <div className="section-head"><div className="h3">{t('needs_title')}</div><span className="count-pill num">{needs.length}</span></div>
@@ -272,4 +275,26 @@ function StartSheet({ open, onClose, place }: { open: boolean; onClose: () => vo
 
 function Delta({ v, label }: { v: number; label?: string }) {
   return <span className={`delta num ${v > 0 ? 'up' : 'down'}`}><Icon name="arrowUp" size={11} stroke={2.6} style={v < 0 ? { transform: 'rotate(180deg)' } : undefined} />{v > 0 ? '+' : '−'}{Math.abs(v)}{label ? ` ${label}` : ''}</span>
+}
+
+
+function NutritionCard() {
+  const { t, lang } = useT()
+  const s = useStore()
+  const day = startOfDay(Date.now())
+  const tot = dayTotals(s.meals.filter((m) => m.date === day))
+  const w = [...s.measurements].filter((m) => m.weight).sort((a, b) => b.date - a.date)[0]?.weight
+  const tg = targets(s.profile, w)
+  const pct = Math.min(100, Math.round((tot.kcal / tg.kcal) * 100))
+  return (
+    <button className="card press nutri-card section" onClick={() => navigate('/nutrition')}>
+      <span className="ki" style={{ background: 'var(--green-soft, rgba(76,175,110,0.15))', color: 'var(--green)' }}><Icon name="plate" size={18} stroke={2.2} /></span>
+      <span className="nc-main">
+        <b>{t('today_nutrition')}</b>
+        <span className="small muted num">{fmtNum(Math.round(tot.kcal), lang, 0)} / {fmtNum(tg.kcal, lang, 0)} {t('nu_kcal')}</span>
+        <span className="track"><i style={{ width: `${pct}%`, background: tot.kcal > tg.kcal ? 'var(--red)' : 'var(--green)' }} /></span>
+      </span>
+      <Icon name="chevR" size={16} />
+    </button>
+  )
 }

@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://forma:forma@127.0.0.1:5432/forma")
 DATA_DIR = Path(os.environ.get("DATA_DIR", "./data"))
 VAPID_SUB = os.environ.get("VAPID_SUB", "mailto:admin@forma.app")
-KINDS = {"profile", "place", "workout", "measurement", "exercise"}
+KINDS = {"profile", "place", "workout", "measurement", "exercise", "meal"}
 KEY_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 SCHEMA = """

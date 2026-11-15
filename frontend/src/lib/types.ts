@@ -23,6 +23,7 @@ export interface Profile extends Base {
   skillPasses: Record<BranchId, number>
   test?: { pushups: number; squats: number; plank: number; at: number }
   seed: number
+  kcalGoal?: number // переопределение дневной цели
   createdAt: number
 }
 
@@ -103,4 +104,24 @@ export interface CustomExercise extends Base {
 
 export interface PhotoEntry { id: string; date: number; blob: Blob }
 
-export type SyncKind = 'profile' | 'place' | 'workout' | 'measurement' | 'exercise'
+export type SyncKind = 'profile' | 'place' | 'workout' | 'measurement' | 'exercise' | 'meal'
+
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+export interface MealItem {
+  id: string
+  name: string
+  brand?: string
+  barcode?: string
+  grams: number
+  kcal100: number
+  p100: number
+  f100: number
+  c100: number
+}
+
+export interface Meal extends Base {
+  date: number // начало дня, мс
+  slot: MealSlot
+  items: MealItem[]
+}

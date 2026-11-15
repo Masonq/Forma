@@ -16,6 +16,7 @@ import Library, { ExerciseDetail } from './screens/Library'
 import Profile, { PlacesScreen, PlaceEdit } from './screens/Profile'
 import Skills from './screens/Skills'
 import Body from './screens/Body'
+import Nutrition from './screens/Nutrition'
 
 const TABS = [
   { path: '/', key: 'tab_today', icon: 'today' },
@@ -30,6 +31,7 @@ function tabOf(path: string) {
   const t = TABS.find((x) => x.path !== '/' && path.startsWith(x.path))
   if (t) return t.path
   if (path.startsWith('/library') || path.startsWith('/exercise') || path.startsWith('/body')) return '/progress'
+  if (path.startsWith('/nutrition')) return '/'
   if (path.startsWith('/places') || path.startsWith('/place') || path.startsWith('/skills')) return '/profile'
   return ''
 }
@@ -85,6 +87,7 @@ export default function App() {
   else if (path.startsWith('/place/')) screen = <PlaceEdit id={path.split('/')[2]} />
   else if (path === '/skills') screen = <Skills />
   else if (path === '/body') screen = <Body />
+  else if (path === '/nutrition') screen = <Nutrition />
   else screen = <Today />
 
   return (
