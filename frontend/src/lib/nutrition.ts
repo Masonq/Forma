@@ -32,6 +32,9 @@ export interface FoodHit { name: string; brand?: string; barcode?: string; kcal1
 
 const num = (v: unknown) => (typeof v === 'number' && isFinite(v) ? v : typeof v === 'string' ? parseFloat(v) || 0 : 0)
 
+// '&quot;Фета&quot;' -> '"Фета"'
+const unescape = (x: string) => x.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+
 function fromProduct(pr: any): FoodHit | null {
   const n = pr?.nutriments ?? {}
   let kcal = num(n['energy-kcal_100g'])
@@ -39,8 +42,8 @@ function fromProduct(pr: any): FoodHit | null {
   const name = pr?.product_name_ru || pr?.product_name || pr?.generic_name
   if (!name || !kcal) return null
   return {
-    name: String(name).slice(0, 80),
-    brand: pr.brands ? String(pr.brands).split(',')[0].slice(0, 40) : undefined,
+    name: unescape(String(name)).slice(0, 80),
+    brand: pr.brands ? unescape(String(pr.brands)).split(',')[0].slice(0, 40) : undefined,
     barcode: pr.code || undefined,
     kcal100: Math.round(kcal),
     p100: Math.round(num(n.proteins_100g) * 10) / 10,
@@ -60,13 +63,24 @@ export async function lookupBarcode(code: string): Promise<FoodHit | null> {
   } catch { return null }
 }
 
-export async function searchFood(q: string, lang: string): Promise<FoodHit[]> {
+async function searchOne(cc: string, q: string, n: number): Promise<FoodHit[]> {
   try {
-    const cc = lang === 'ru' ? 'ru' : lang === 'sr' ? 'rs' : 'world'
-    const u = `https://${cc}.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&fields=${FIELDS}`
+    const u = `https://${cc}.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=${n}&fields=${FIELDS}`
     const r = await fetch(u)
     if (!r.ok) return []
     const j = await r.json()
     return ((j?.products as any[]) ?? []).map(fromProduct).filter(Boolean) as FoodHit[]
   } catch { return [] }
+}
+
+// Сначала сербская витрина (мы в Сербии), затем мировая база; без дублей.
+export async function searchFood(q: string, _lang: string): Promise<FoodHit[]> {
+  const [rs, world] = await Promise.all([searchOne('rs', q, 10), searchOne('world', q, 20)])
+  const out: FoodHit[] = []
+  const seen = new Set<string>()
+  for (const h of [...rs, ...world]) {
+    const k = h.barcode || h.name.toLowerCase() + '|' + (h.brand ?? '')
+    if (!seen.has(k)) { seen.add(k); out.push(h) }
+  }
+  return out.slice(0, 25)
 }
