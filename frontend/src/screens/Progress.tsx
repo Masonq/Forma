@@ -114,7 +114,7 @@ function MusclesWeek() {
     <div className="section">
       <div className="section-head"><div className="h3">{t('pr_muscles_week')}</div></div>
       <div className="card">
-        <Anatomy levels={Object.fromEntries(Object.entries(sets).map(([m, n]) => [m, Math.min(1, (n as number) / 10)]))} />
+        <Anatomy mode="heat" levels={Object.fromEntries(Object.entries(sets).map(([m, n]) => [m, Math.min(1, (n as number) / 10)]))} />
         <div className="small muted" style={{ margin: '14px 0 10px' }}>{t('pr_muscles_d')}</div>
         {trained.slice(0, 6).map((m) => (
           <div key={m} className="mbar">

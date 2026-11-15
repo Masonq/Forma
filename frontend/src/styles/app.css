@@ -465,7 +465,12 @@ img, svg { display: block; }
 .ex-photo { margin-top: 16px; border-radius: var(--r-card); overflow: hidden; aspect-ratio: 16 / 9; background: var(--surface); }
 .ex-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .hero .hero-muscles { margin-top: 10px; font-size: 14px; color: var(--text); opacity: 0.85; }
-.anatomy { display: grid; gap: 4px; background: #000; border-radius: var(--r-card); overflow: hidden; padding: 8px 4px; isolation: isolate; }
+.anatomy { display: grid; gap: 4px; background: #000; border-radius: var(--r-card); overflow: hidden; padding: 8px 4px 4px; isolation: isolate; }
+.anatomy figure { margin: 0; }
+.anatomy .a-cap { text-align: center; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted, #8a8f98); margin-top: 2px; padding-bottom: 4px; }
+.anatomy .a-pulse { animation: a-pulse 2.6s ease-in-out infinite; }
+@keyframes a-pulse { 0%, 100% { opacity: 0.65; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .anatomy .a-pulse { animation: none; } }
 .anatomy svg { display: block; width: 100%; height: auto; }
 
 .ob-welcome { position: relative; }

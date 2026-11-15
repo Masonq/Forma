@@ -4,6 +4,8 @@ import { useStore } from './store'
 type Dict = Record<string, L3>
 
 const D: Dict = {
+  an_front: ['Спереди', 'Front', 'Spreda'],
+  an_back: ['Сзади', 'Back', 'Pozadi'],
   // общее
   next: ['Далее', 'Next', 'Dalje'],
   back: ['Назад', 'Back', 'Nazad'],
