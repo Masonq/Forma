@@ -471,6 +471,8 @@ img, svg { display: block; }
 .anatomy .a-pulse { animation: a-pulse 2.6s ease-in-out infinite; }
 @keyframes a-pulse { 0%, 100% { opacity: 0.65; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .anatomy .a-pulse { animation: none; } }
+.heat-legend { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 11px; color: var(--muted, #8a8f98); }
+.heat-legend i { flex: 1; height: 6px; border-radius: 3px; background: linear-gradient(90deg, rgba(226,55,68,0.12), rgba(226,55,68,1)); }
 .anatomy svg { display: block; width: 100%; height: auto; }
 
 .ob-welcome { position: relative; }
