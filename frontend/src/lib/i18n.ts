@@ -4,6 +4,8 @@ import { useStore } from './store'
 type Dict = Record<string, L3>
 
 const D: Dict = {
+  nu_add_to: ['Добавить: {n}', 'Add to {n}', 'Dodaj: {n}'],
+  nu_search_hint: ['Найди продукт, отсканируй штрихкод или добавь вручную', 'Search a product, scan a barcode or add manually', 'Pronađi proizvod, skeniraj barkod ili dodaj ručno'],
   nu_title: ['Питание', 'Nutrition', 'Ishrana'],
   nu_today: ['Сегодня', 'Today', 'Danas'],
   nu_yesterday: ['Вчера', 'Yesterday', 'Juče'],

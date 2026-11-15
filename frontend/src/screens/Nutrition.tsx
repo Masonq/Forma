@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { BarcodeScanner } from '../components/Scanner'
-import { BarChart, Empty, Ring, Seg, Sheet, goBack } from '../components/ui'
+import { BarChart, Empty, Ring, Sheet, goBack } from '../components/ui'
 import { fmtNum, monthShort, startOfDay, uid } from '../lib/format'
 import { useT } from '../lib/i18n'
 import { type FoodHit, dayTotals, itemKcal, lookupBarcode, searchFood, targets } from '../lib/nutrition'
@@ -154,97 +154,118 @@ export default function Nutrition() {
   )
 }
 
-// — Добавление продукта: поиск / сканер / вручную —
+// — Добавление продукта: поиск с автопоиском, сканер, вручную —
 function AddSheet({ slot, onClose, onPick }: { slot: MealSlot; onClose: () => void; onPick: (it: MealItem) => void }) {
   const { t, lang } = useT()
   const s = useStore()
-  const [tab, setTab] = useState<'search' | 'scan' | 'manual'>('search')
+  const [view, setView] = useState<'search' | 'scan' | 'manual'>('search')
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<FoodHit[] | null>(null)
   const [busy, setBusy] = useState(false)
   const [picked, setPicked] = useState<FoodHit | null>(null)
   const [scanMiss, setScanMiss] = useState<string | null>(null)
+  const seq = useRef(0)
 
   const recents = useMemo(() => {
     const seen = new Set<string>()
     const out: MealItem[] = []
-    for (const m of [...s.meals].sort((a, b) => b.date - a.date)) {
+    for (const m of [...s.meals].sort((a, b) => b.updatedAt - a.updatedAt)) {
       for (const it of m.items) {
         const k = it.barcode || it.name.toLowerCase()
         if (!seen.has(k)) { seen.add(k); out.push(it) }
-        if (out.length >= 8) return out
+        if (out.length >= 10) return out
       }
     }
     return out
   }, [s.meals])
 
-  const doSearch = async () => {
-    if (q.trim().length < 2) return
+  // автопоиск с задержкой
+  useEffect(() => {
+    const qq = q.trim()
+    if (qq.length < 2) { setHits(null); setBusy(false); return }
     setBusy(true)
-    setHits(await searchFood(q.trim(), lang))
-    setBusy(false)
-  }
+    const n = ++seq.current
+    const timer = setTimeout(async () => {
+      const res = await searchFood(qq, lang)
+      if (seq.current === n) { setHits(res); setBusy(false) }
+    }, 450)
+    return () => clearTimeout(timer)
+  }, [q, lang])
+
   const onCode = async (code: string) => {
-    setBusy(true)
+    setView('search'); setBusy(true)
     const hit = await lookupBarcode(code)
     setBusy(false)
-    if (hit) { setPicked(hit); setScanMiss(null) } else setScanMiss(code)
+    if (hit) { setPicked(hit); setScanMiss(null) } else { setScanMiss(code); setView('manual') }
   }
 
   if (picked) return <GramsSheet hit={picked} onClose={onClose} onBack={() => setPicked(null)} onPick={onPick} />
 
   return (
-    <Sheet open onClose={onClose} title={t('nu_' + slot)}>
-      <Seg value={tab} onChange={(v) => { setTab(v); setScanMiss(null) }} options={[
-        { v: 'search', label: t('nu_tab_search') },
-        { v: 'scan', label: t('nu_tab_scan') },
-        { v: 'manual', label: t('nu_tab_manual') },
-      ]} />
-      {tab === 'search' && (
+    <Sheet open onClose={onClose} title={t('nu_add_to', { n: t('nu_' + slot).toLowerCase() })}>
+      {view === 'search' && (
         <>
-          <div className="row" style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <input className="field" style={{ flex: 1 }} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doSearch()} placeholder={t('nu_search_ph')} />
-            <button className="btn primary" style={{ width: 'auto', padding: '0 18px' }} disabled={busy || q.trim().length < 2} onClick={doSearch}><Icon name="search" size={20} /></button>
+          <div className="food-search">
+            <Icon name="search" size={19} />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('nu_search_ph')} autoFocus autoCorrect="off" spellCheck={false} enterKeyHint="search" />
+            {q && <button className="fs-clear" onClick={() => setQ('')} aria-label={t('close')}><Icon name="close" size={16} /></button>}
           </div>
-          <div className="list" style={{ marginTop: 12 }}>
-            {busy && <div className="small muted" style={{ padding: 12 }}>{t('nu_searching')}</div>}
-            {!busy && hits?.length === 0 && <div className="small muted" style={{ padding: 12 }}>{t('nu_nothing')}</div>}
-            {!busy && hits?.map((h, i) => (
-              <button className="li" key={i} onClick={() => setPicked(h)}>
-                <div className="li-main">
-                  <div className="li-title ellipsis">{h.name}</div>
-                  <div className="li-sub num">{h.brand ? h.brand + ' · ' : ''}{h.kcal100} {t('nu_kcal')}/100{t('nu_g')}</div>
-                </div>
-                <Icon name="plus" size={18} />
-              </button>
-            ))}
-            {!busy && hits === null && recents.length > 0 && (
-              <>
-                <div className="small muted" style={{ padding: '4px 2px' }}>{t('nu_recent')}</div>
-                {recents.map((it) => (
-                  <button className="li" key={it.id} onClick={() => setPicked({ name: it.name, brand: it.brand, barcode: it.barcode, kcal100: it.kcal100, p100: it.p100, f100: it.f100, c100: it.c100 })}>
-                    <div className="li-main">
-                      <div className="li-title ellipsis">{it.name}</div>
-                      <div className="li-sub num">{it.kcal100} {t('nu_kcal')}/100{t('nu_g')}</div>
-                    </div>
-                    <Icon name="plus" size={18} />
-                  </button>
-                ))}
-              </>
-            )}
+          <div className="food-actions">
+            <button onClick={() => { setScanMiss(null); setView('scan') }}><Icon name="camera" size={18} />{t('nu_tab_scan')}</button>
+            <button onClick={() => { setScanMiss(null); setView('manual') }}><Icon name="edit" size={18} />{t('nu_tab_manual')}</button>
           </div>
+          {busy && (
+            <div className="food-list">
+              {[0, 1, 2, 3].map((i) => <div className="food-row skel" key={i}><span className="fthumb" /><span className="fmain"><i style={{ width: '62%' }} /><i style={{ width: '38%' }} /></span></div>)}
+            </div>
+          )}
+          {!busy && hits && (
+            <div className="food-list">
+              {hits.length === 0 && <div className="small muted" style={{ padding: 14 }}>{t('nu_nothing')}</div>}
+              {hits.map((h, i) => <FoodRow key={h.barcode ?? i} name={h.name} brand={h.brand} kcal={h.kcal100} photo={h.photo} onClick={() => setPicked(h)} />)}
+            </div>
+          )}
+          {!busy && !hits && (
+            <div className="food-list">
+              {recents.length > 0 && <div className="small muted" style={{ padding: '10px 2px 4px' }}>{t('nu_recent')}</div>}
+              {recents.map((it) => (
+                <FoodRow key={it.id} name={it.name} brand={it.brand} kcal={it.kcal100}
+                  onClick={() => setPicked({ name: it.name, brand: it.brand, barcode: it.barcode, kcal100: it.kcal100, p100: it.p100, f100: it.f100, c100: it.c100 })} />
+              ))}
+              {recents.length === 0 && <Empty icon="plate" text={t('nu_search_hint')} />}
+            </div>
+          )}
         </>
       )}
-      {tab === 'scan' && (
-        <div style={{ marginTop: 12 }}>
-          {busy
-            ? <div className="small muted" style={{ padding: 12 }}>{t('nu_searching')}</div>
-            : <BarcodeScanner onCode={onCode} onError={() => setTab('manual')} />}
-          {scanMiss && <div className="small" style={{ color: 'var(--red)', marginTop: 10 }}>{t('nu_scan_miss', { n: scanMiss })}</div>}
+      {view === 'scan' && (
+        <div style={{ marginTop: 4 }}>
+          <BarcodeScanner onCode={onCode} onError={() => setView('manual')} />
+          <button className="btn line" style={{ marginTop: 12 }} onClick={() => setView('search')}>{t('back')}</button>
         </div>
       )}
-      {tab === 'manual' && <ManualForm onPick={onPick} />}
+      {view === 'manual' && (
+        <>
+          {scanMiss && <div className="banner" style={{ marginTop: 4 }}><Icon name="info" size={18} />{t('nu_scan_miss', { n: scanMiss })}</div>}
+          <ManualForm onPick={onPick} />
+          <button className="btn line" style={{ marginTop: 10 }} onClick={() => { setScanMiss(null); setView('search') }}>{t('back')}</button>
+        </>
+      )}
     </Sheet>
+  )
+}
+
+function FoodRow({ name, brand, kcal, photo, onClick }: { name: string; brand?: string; kcal: number; photo?: string; onClick: () => void }) {
+  const { t } = useT()
+  return (
+    <button className="food-row" onClick={onClick}>
+      <span className="fthumb">{photo ? <img src={photo} alt="" loading="lazy" /> : <Icon name="plate" size={20} />}</span>
+      <span className="fmain">
+        <span className="fname ellipsis">{name}</span>
+        {brand && <span className="small muted ellipsis">{brand}</span>}
+      </span>
+      <span className="fkcal num">{kcal}<small> {t('nu_kcal')}</small></span>
+      <span className="fadd"><Icon name="plus" size={16} /></span>
+    </button>
   )
 }
 
@@ -254,7 +275,13 @@ function GramsSheet({ hit, onClose, onBack, onPick }: { hit: FoodHit; onClose: (
   const kcal = Math.round((hit.kcal100 * grams) / 100)
   return (
     <Sheet open onClose={onClose} title={hit.name} right={<button className="iconbtn ghost" onClick={onBack} aria-label={t('back')}><Icon name="back" size={18} /></button>}>
-      <div className="small muted">{hit.brand}</div>
+      <div className="gs-head">
+        {hit.photo && <span className="fthumb big"><img src={hit.photo} alt="" /></span>}
+        <div>
+          {hit.brand && <div className="small muted">{hit.brand}</div>}
+          <div className="small muted num">{hit.kcal100} {t('nu_kcal')}/100{t('nu_g')}</div>
+        </div>
+      </div>
       <div className="grams-row">
         {[50, 100, 150, 200].map((g) => <button key={g} className={`chip ${grams === g ? 'on' : ''}`} onClick={() => setGrams(g)}>{g} {t('nu_g')}</button>)}
       </div>

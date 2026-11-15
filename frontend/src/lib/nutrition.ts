@@ -28,7 +28,7 @@ export function dayTotals(meals: Meal[]) {
 }
 
 // — Open Food Facts —
-export interface FoodHit { name: string; brand?: string; barcode?: string; kcal100: number; p100: number; f100: number; c100: number }
+export interface FoodHit { name: string; brand?: string; barcode?: string; photo?: string; kcal100: number; p100: number; f100: number; c100: number }
 
 const num = (v: unknown) => (typeof v === 'number' && isFinite(v) ? v : typeof v === 'string' ? parseFloat(v) || 0 : 0)
 
@@ -45,6 +45,7 @@ function fromProduct(pr: any): FoodHit | null {
     name: unescape(String(name)).slice(0, 80),
     brand: pr.brands ? unescape(String(pr.brands)).split(',')[0].slice(0, 40) : undefined,
     barcode: pr.code || undefined,
+    photo: pr.image_front_small_url || pr.image_small_url || undefined,
     kcal100: Math.round(kcal),
     p100: Math.round(num(n.proteins_100g) * 10) / 10,
     f100: Math.round(num(n.fat_100g) * 10) / 10,
@@ -52,7 +53,7 @@ function fromProduct(pr: any): FoodHit | null {
   }
 }
 
-const FIELDS = 'code,product_name,product_name_ru,generic_name,brands,nutriments'
+const FIELDS = 'code,product_name,product_name_ru,generic_name,brands,nutriments,image_front_small_url,image_small_url'
 
 export async function lookupBarcode(code: string): Promise<FoodHit | null> {
   try {
