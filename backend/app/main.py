@@ -64,6 +64,16 @@ CREATE TABLE IF NOT EXISTS push_jobs (
   PRIMARY KEY (user_id, tag)
 );
 CREATE INDEX IF NOT EXISTS push_jobs_fire ON push_jobs (fire_at);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pass_hash TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS users_email ON users (email);
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash TEXT PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS sessions_user ON sessions (user_id);
 """
 
 pool: asyncpg.Pool | None = None
@@ -73,6 +83,29 @@ vapid_public = ""
 
 def sha(s: str) -> str:
     return hashlib.sha256(s.encode()).hexdigest()
+
+
+def hash_pw(pw: str) -> str:
+    salt = secrets.token_bytes(16)
+    h = hashlib.scrypt(pw.encode(), salt=salt, n=16384, r=8, p=1)
+    return f"scrypt${salt.hex()}${h.hex()}"
+
+
+def check_pw(pw: str, stored: str) -> bool:
+    try:
+        _, salt, h = stored.split("$")
+        got = hashlib.scrypt(pw.encode(), salt=bytes.fromhex(salt), n=16384, r=8, p=1)
+        return secrets.compare_digest(got.hex(), h)
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def norm_email(e: str) -> str:
+    return e.strip().lower()
+
+
+def valid_email(e: str) -> bool:
+    return 3 <= len(e) <= 254 and "@" in e and "." in e.split("@")[-1] and " " not in e
 
 
 def new_key() -> str:
@@ -170,7 +203,9 @@ async def user_id(authorization: str = Header(default="")) -> int:
         raise HTTPException(401)
     tok = authorization[7:].strip()
     async with pool.acquire() as c:
-        uid = await c.fetchval("UPDATE users SET seen_at=now() WHERE token_hash=$1 RETURNING id", sha(tok))
+        uid = await c.fetchval("UPDATE sessions SET seen_at=now() WHERE token_hash=$1 RETURNING user_id", sha(tok))
+        if not uid:
+            uid = await c.fetchval("UPDATE users SET seen_at=now() WHERE token_hash=$1 RETURNING id", sha(tok))
     if not uid:
         raise HTTPException(401)
     return uid
@@ -214,6 +249,77 @@ async def recover(body: RecoverIn, req: Request):
         raise HTTPException(404, "unknown key")
     k = body.key.strip().upper()
     return {"token": tok, "key": k}
+
+
+class RegisterIn(BaseModel):
+    email: str = Field(max_length=254)
+    password: str = Field(min_length=8, max_length=128)
+
+
+@app.post("/api/auth/register")
+async def register(body: RegisterIn, req: Request, uid: int = Depends(user_id)):
+    limit(req, "register", 10, 3600)
+    email = norm_email(body.email)
+    if not valid_email(email):
+        raise HTTPException(400, "bad email")
+    async with pool.acquire() as c:
+        cur = await c.fetchval("SELECT email FROM users WHERE id=$1", uid)
+        if cur:
+            raise HTTPException(409, "already registered")
+        try:
+            await c.execute("UPDATE users SET email=$1, pass_hash=$2 WHERE id=$3", email, hash_pw(body.password), uid)
+        except asyncpg.UniqueViolationError:
+            raise HTTPException(409, "email taken") from None
+    return {"email": email}
+
+
+class LoginIn(BaseModel):
+    email: str = Field(max_length=254)
+    password: str = Field(max_length=128)
+
+
+@app.post("/api/auth/login")
+async def login(body: LoginIn, req: Request):
+    limit(req, "login", 20, 600)
+    email = norm_email(body.email)
+    async with pool.acquire() as c:
+        row = await c.fetchrow("SELECT id, pass_hash FROM users WHERE email=$1", email)
+        if not row or not row["pass_hash"] or not await asyncio.to_thread(check_pw, body.password, row["pass_hash"]):
+            raise HTTPException(401, "wrong credentials")
+        tok = secrets.token_urlsafe(32)
+        await c.execute("INSERT INTO sessions(token_hash, user_id) VALUES($1,$2)", sha(tok), row["id"])
+    return {"token": tok, "email": email}
+
+
+@app.post("/api/auth/logout")
+async def logout(authorization: str = Header(default="")):
+    if authorization.startswith("Bearer "):
+        async with pool.acquire() as c:
+            await c.execute("DELETE FROM sessions WHERE token_hash=$1", sha(authorization[7:].strip()))
+    return {"ok": True}
+
+
+class PasswordIn(BaseModel):
+    old: str = Field(max_length=128)
+    new: str = Field(min_length=8, max_length=128)
+
+
+@app.post("/api/auth/password")
+async def change_password(body: PasswordIn, req: Request, uid: int = Depends(user_id)):
+    limit(req, "password", 10, 600)
+    async with pool.acquire() as c:
+        ph = await c.fetchval("SELECT pass_hash FROM users WHERE id=$1", uid)
+        if not ph or not await asyncio.to_thread(check_pw, body.old, ph):
+            raise HTTPException(401, "wrong password")
+        await c.execute("UPDATE users SET pass_hash=$1 WHERE id=$2", hash_pw(body.new), uid)
+    return {"ok": True}
+
+
+@app.get("/api/auth/me")
+async def me(uid: int = Depends(user_id)):
+    async with pool.acquire() as c:
+        email = await c.fetchval("SELECT email FROM users WHERE id=$1", uid)
+    return {"email": email}
 
 
 class Change(BaseModel):

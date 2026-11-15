@@ -95,6 +95,58 @@ export function startSync() {
   scheduleSync(500)
 }
 
+// ——— Аккаунт: email + пароль ———
+export async function accountEmail(): Promise<string | undefined> {
+  return db.meta<string>('email')
+}
+
+export async function register(email: string, password: string): Promise<string | null> {
+  try {
+    const r = await req('/auth/register', { email, password })
+    await db.setMeta('email', r.email)
+    return null
+  } catch (e: any) {
+    return String(e?.message ?? 'error')
+  }
+}
+
+export async function login(email: string, password: string): Promise<string | null> {
+  try {
+    const r = await fetch(API + '/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+    if (!r.ok) return `http ${r.status}`
+    const j = await r.json()
+    await db.wipeData()
+    await db.setMeta('token', j.token)
+    await db.setMeta('email', j.email)
+    await db.setMeta('key', undefined)
+    await db.setMeta('cursor', 0)
+    await syncNow()
+    await useStore.getState().init()
+    return null
+  } catch { return 'network' }
+}
+
+export async function logout() {
+  try { await req('/auth/logout', {}) } catch { /* сеть не обязательна */ }
+  await db.wipeData()
+  await db.setMeta('token', undefined)
+  await db.setMeta('email', undefined)
+  await db.setMeta('key', undefined)
+  await db.setMeta('cursor', 0)
+  await useStore.getState().init()
+  scheduleSync(200)
+}
+
+export async function changePassword(old: string, neu: string): Promise<string | null> {
+  try {
+    await req('/auth/password', { old, new: neu })
+    return null
+  } catch (e: any) { return String(e?.message ?? 'error') }
+}
+
 export async function recover(key: string): Promise<boolean> {
   try {
     const r = await fetch(API + '/auth/recover', {

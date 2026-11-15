@@ -7,9 +7,10 @@ import { exportCSV, importCSV } from '../lib/csv'
 import { uid } from '../lib/format'
 import { pick, useT } from '../lib/i18n'
 import { useStore } from '../lib/store'
-import { accountKey, disablePush, enablePush, isStandalone, pushState } from '../lib/sync'
+import { accountEmail, accountKey, changePassword, disablePush, enablePush, isStandalone, logout, pushState, register } from '../lib/sync'
 import type { Goal, Level, Place } from '../lib/types'
-import { EquipPicker, InstallSteps, KeySheet } from './Onboarding'
+import { EquipPicker, InstallSteps } from './Onboarding'
+import { AccountSheet } from '../components/AccountSheet'
 
 function Opt<T extends string | number>({ value, options, onPick }: { value: T; options: { v: T; label: string; sub?: string }[]; onPick: (v: T) => void }) {
   return (
@@ -28,7 +29,9 @@ export default function Profile() {
   const { t, p, lang } = useT()
   const s = useStore()
   const pr = s.profile
-  const [sheet, setSheet] = useState<null | 'goal' | 'level' | 'lang' | 'units' | 'rest' | 'key' | 'enterKey' | 'install' | 'name' | 'theme'>(null)
+  const [sheet, setSheet] = useState<null | 'goal' | 'level' | 'lang' | 'units' | 'rest' | 'key' | 'enterKey' | 'install' | 'name' | 'theme' | 'register' | 'pass' | 'logout'>(null)
+  const [email, setEmail] = useState<string | undefined>()
+  useEffect(() => { accountEmail().then(setEmail) }, [sheet])
   const [push, setPush] = useState<'on' | 'off' | 'denied' | 'install' | 'unsupported'>('off')
   const [key, setKey] = useState<string | undefined>()
   const [copied, setCopied] = useState(false)
@@ -122,8 +125,18 @@ export default function Profile() {
         <div className="list">
           <Row icon="upload" title={t('pf_import')} sub={t('pf_import_d')} onClick={() => file.current?.click()} />
           <Row icon="download" title={t('pf_export')} sub={t('pf_export_d')} onClick={onExport} />
+          {email ? (
+            <>
+              <Row icon="profile" title={email} sub={t('ac_signed')} onClick={() => setSheet('pass')} />
+              <Row icon="close" title={t('ac_logout')} onClick={() => setSheet('logout')} />
+            </>
+          ) : (
+            <>
+              <Row icon="profile" title={t('ac_create')} sub={t('ac_create_d')} onClick={() => setSheet('register')} />
+              <Row icon="refresh" title={t('ac_login')} onClick={() => setSheet('enterKey')} />
+            </>
+          )}
           <Row icon="key" title={t('pf_key')} sub={t('pf_key_d')} onClick={async () => { setSheet('key'); setKey(await accountKey()) }} />
-          <Row icon="refresh" title={t('pf_key_enter')} onClick={() => setSheet('enterKey')} />
           {!isStandalone() && <Row icon="plus" title={t('pf_install')} onClick={() => setSheet('install')} />}
         </div>
         <input ref={file} type="file" accept=".csv,text/csv" hidden onChange={(e) => { onImport(e.target.files?.[0]); e.target.value = '' }} />
@@ -157,7 +170,13 @@ export default function Profile() {
         <div className="key-box num" style={{ marginTop: 14 }}>{key ?? t('pf_key_offline')}</div>
         {key && <button className="btn primary" style={{ marginTop: 14 }} onClick={async () => { try { await navigator.clipboard.writeText(key); setCopied(true) } catch { /* */ } }}><Icon name={copied ? 'check' : 'copy'} size={20} />{t(copied ? 'pf_key_copied' : 'pf_key_copy')}</button>}
       </Sheet>
-      <KeySheet open={sheet === 'enterKey'} onClose={() => setSheet(null)} lang={lang} />
+      <AccountSheet open={sheet === 'enterKey'} onClose={() => setSheet(null)} lang={lang} />
+      <RegisterSheet open={sheet === 'register'} onClose={() => setSheet(null)} />
+      <PassSheet open={sheet === 'pass'} onClose={() => setSheet(null)} email={email} />
+      <Sheet open={sheet === 'logout'} onClose={() => setSheet(null)} title={t('ac_logout')}>
+        <p className="sub" style={{ marginTop: 0 }}>{t('ac_logout_d')}</p>
+        <button className="btn primary" style={{ marginTop: 14 }} onClick={async () => { await logout(); setSheet(null) }}>{t('ac_logout')}</button>
+      </Sheet>
       <Sheet open={sheet === 'install'} onClose={() => setSheet(null)}>
         <InstallSteps lang={lang} />
         <button className="btn primary" style={{ marginTop: 16 }} onClick={() => setSheet(null)}>{t('done')}</button>
@@ -244,5 +263,61 @@ export function PlaceEdit({ id }: { id: string }) {
         goBack('/places')
       }}><Icon name="trash" size={20} />{t('pf_place_delete')}</button>
     </div>
+  )
+}
+
+
+function RegisterSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useT()
+  const [email, setEmail] = useState('')
+  const [p1, setP1] = useState('')
+  const [p2, setP2] = useState('')
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+  const submit = async () => {
+    if (p1.length < 8) { setErr(t('ac_err_pass')); return }
+    if (p1 !== p2) { setErr(t('ac_err_match')); return }
+    setBusy(true); setErr('')
+    const e = await register(email.trim(), p1)
+    setBusy(false)
+    if (!e) { onClose(); return }
+    setErr(t(e.includes('409') ? 'ac_err_taken' : e.includes('400') ? 'ac_err_email' : 'ac_err_net'))
+  }
+  return (
+    <Sheet open={open} onClose={onClose} title={t('ac_create')}>
+      <p className="sub" style={{ marginTop: 0 }}>{t('ac_create_d')}</p>
+      <input className="field" style={{ marginTop: 14 }} type="email" value={email} onChange={(e) => { setEmail(e.target.value); setErr('') }} placeholder={t('ac_email')} autoComplete="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} inputMode="email" />
+      <input className="field" style={{ marginTop: 10 }} type="password" value={p1} onChange={(e) => { setP1(e.target.value); setErr('') }} placeholder={t('ac_password')} autoComplete="new-password" />
+      <input className="field" style={{ marginTop: 10 }} type="password" value={p2} onChange={(e) => { setP2(e.target.value); setErr('') }} placeholder={t('ac_pass2')} autoComplete="new-password" />
+      {err && <div className="small" style={{ color: 'var(--red)', marginTop: 8 }}>{err}</div>}
+      <button className="btn primary" style={{ marginTop: 14 }} disabled={busy || !email.includes('@') || !p1 || !p2} onClick={submit}><Icon name="profile" size={20} />{t('ac_create')}</button>
+    </Sheet>
+  )
+}
+
+function PassSheet({ open, onClose, email }: { open: boolean; onClose: () => void; email?: string }) {
+  const { t } = useT()
+  const [p0, setP0] = useState('')
+  const [p1, setP1] = useState('')
+  const [err, setErr] = useState('')
+  const [ok, setOk] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const submit = async () => {
+    if (p1.length < 8) { setErr(t('ac_err_pass')); return }
+    setBusy(true); setErr('')
+    const e = await changePassword(p0, p1)
+    setBusy(false)
+    if (!e) { setOk(true); setP0(''); setP1(''); setTimeout(onClose, 900); return }
+    setErr(t(e.includes('401') ? 'ac_err_old' : 'ac_err_net'))
+  }
+  return (
+    <Sheet open={open} onClose={() => { setOk(false); onClose() }} title={t('ac_change_pass')}>
+      <p className="sub" style={{ marginTop: 0 }}>{email}</p>
+      <input className="field" style={{ marginTop: 14 }} type="password" value={p0} onChange={(e) => { setP0(e.target.value); setErr('') }} placeholder={t('ac_old_pass')} autoComplete="current-password" />
+      <input className="field" style={{ marginTop: 10 }} type="password" value={p1} onChange={(e) => { setP1(e.target.value); setErr('') }} placeholder={t('ac_new_pass')} autoComplete="new-password" />
+      {err && <div className="small" style={{ color: 'var(--red)', marginTop: 8 }}>{err}</div>}
+      {ok && <div className="small" style={{ color: 'var(--green)', marginTop: 8 }}>{t('ac_saved')}</div>}
+      <button className="btn primary" style={{ marginTop: 14 }} disabled={busy || !p0 || !p1} onClick={submit}>{t('ac_change_pass')}</button>
+    </Sheet>
   )
 }

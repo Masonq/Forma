@@ -1,3 +1,4 @@
+import { AccountSheet } from '../components/AccountSheet'
 import { ParticleText } from '../components/Particles'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Equip, Lang } from '../data/exercises'
@@ -122,7 +123,7 @@ export default function Onboarding() {
           <button className="btn primary" onClick={() => setStep(1)}>{t('ob_start')}</button>
           <button className="btn line" onClick={() => setKeyOpen(true)}><Icon name="key" size={20} />{t('ob_have_key')}</button>
         </div>
-        <KeySheet open={keyOpen} onClose={() => setKeyOpen(false)} lang={lang} />
+        <AccountSheet open={keyOpen} onClose={() => setKeyOpen(false)} lang={lang} />
       </div>
     )
   }
